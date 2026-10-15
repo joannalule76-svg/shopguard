@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ShopGuard{% endblock %}</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f3f4f6; margin: 0; }
+    header { background: #1f2937; color: white; padding: 12px 24px;
+             display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 20px; }
+    header form { display: inline; margin: 0; }
+    header span { margin-right: 12px; font-size: 14px; }
+    header button { background: #dc2626; color: white; border: none;
+                    padding: 6px 14px; border-radius: 4px; cursor: pointer; }
+    main { padding: 24px; max-width: 900px; margin: 0 auto; }
+    .message { padding: 10px; border-radius: 4px; margin-bottom: 12px; background: #dbeafe; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ShopGuard POS</h1>
+    <div>
+      <span>Logged in as {{ user.username }}</span>
+      <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Log out</button>
+      </form>
+    </div>
+  </header>
+
+  <main>
+    {% if messages %}
+      {% for message in messages %}
+        <div class="message">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

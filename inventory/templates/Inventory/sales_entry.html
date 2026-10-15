@@ -1,0 +1,108 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Daily Sales Entry{% endblock %}
+
+{% block content %}
+<style>
+  .card { background: white; padding: 20px; border-radius: 8px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.12); margin-bottom: 20px; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+  .row label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+  .row input { padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 15px; }
+  .btn { background: #2563eb; color: white; border: none; padding: 9px 18px;
+         border-radius: 4px; font-size: 15px; cursor: pointer; }
+  .btn-grey { background: #6b7280; }
+  .btn-small { background: #dc2626; color: white; border: none; padding: 4px 10px;
+               border-radius: 4px; cursor: pointer; }
+  .error { background: #fee2e2; color: #b91c1c; padding: 8px;
+           border-radius: 4px; margin-bottom: 12px; }
+  ul.errorlist { margin: 4px 0 0 0; padding: 0; list-style: none; color: #b91c1c; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e5e7eb; }
+  .total { text-align: right; font-size: 20px; font-weight: bold; margin-top: 12px; }
+  form.inline { display: inline; margin: 0; }
+</style>
+
+<h2>Daily Sales Entry</h2>
+
+<div class="card">
+  <h3>Add an item</h3>
+
+  {% if form.non_field_errors %}
+    <div class="error">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add">
+    <div class="row">
+      <div>
+        <label for="id_sku">Item ID</label>
+        {{ form.sku }}
+        {{ form.sku.errors }}
+      </div>
+      <div>
+        <label for="id_quantity">Quantity</label>
+        {{ form.quantity }}
+        {{ form.quantity.errors }}
+      </div>
+      <div>
+        <label for="id_price">Price per unit (blank = listed price)</label>
+        {{ form.price }}
+        {{ form.price.errors }}
+      </div>
+      <div style="padding-top: 22px;">
+        <button type="submit" class="btn">Add</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Current sale</h3>
+  <table>
+    <tr>
+      <th>Item</th>
+      <th>Quantity</th>
+      <th>Price each</th>
+      <th>Line total</th>
+      <th></th>
+    </tr>
+    {% for line in lines %}
+      <tr>
+        <td>{{ line.item.sku }} - {{ line.item.name }}</td>
+        <td>{{ line.quantity }}</td>
+        <td>{{ line.price }}</td>
+        <td>{{ line.line_total }}</td>
+        <td>
+          <form method="post" class="inline">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="remove">
+            <input type="hidden" name="index" value="{{ line.index }}">
+            <button type="submit" class="btn-small">Remove</button>
+          </form>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">No items added yet.</td></tr>
+    {% endfor %}
+  </table>
+
+  <div class="total">Total: {{ total }}</div>
+
+   {% if lines %}
+    <div style="display: flex; gap: 12px; margin-top: 12px;">
+      <form method="post" onsubmit="this.querySelector('button').disabled = true;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="confirm">
+        <button type="submit" class="btn" style="background: #16a34a;">Confirm Sale</button>
+      </form>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="clear">
+        <button type="submit" class="btn btn-grey">Clear all</button>
+      </form>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
