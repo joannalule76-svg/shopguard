@@ -21,22 +21,22 @@ from django.conf import settings
 
 
 # NEW: a registered customer who may take items on credit (created by the owner only)
-class Customer(models.Model):  # NEW
-    name = models.CharField(max_length=100)  # NEW
-    phone = models.CharField(max_length=20, blank=True, default="")  # NEW
-    credit_limit = models.DecimalField(  # NEW
-        max_digits=12, decimal_places=2, default=0,  # NEW
-        help_text="The most this customer may owe at one time. 0 means no credit.",  # NEW
-    )  # NEW
-    credit_days = models.PositiveIntegerField(  # NEW
-        default=14,  # NEW
-        help_text="Days the customer has to pay after taking items on credit.",  # NEW
-    )  # NEW
-    is_active = models.BooleanField(default=True)  # NEW
-    created_at = models.DateTimeField(auto_now_add=True)  # NEW
+class Customer(models.Model): 
+    name = models.CharField(max_length=100)  
+    phone = models.CharField(max_length=20, blank=True, default="")
+    credit_limit = models.DecimalField( 
+        max_digits=12, decimal_places=2, default=0, 
+        help_text="The most this customer may owe at one time. 0 means no credit.",  
+    )  
+    credit_days = models.PositiveIntegerField(
+        default=14, 
+        help_text="Days the customer has to pay after taking items on credit.", 
+    )
+    is_active = models.BooleanField(default=True)  
+    created_at = models.DateTimeField(auto_now_add=True) 
 
-    def __str__(self):  # NEW
-        return self.name  # NEW
+    def __str__(self): 
+        return self.name  
 
 
 class Sale(models.Model):
@@ -65,10 +65,10 @@ class SaleLine(models.Model):
         return f"{self.item.sku} x{self.quantity} (Sale #{self.sale_id})"
 #This model represents the daily balance of the shop,including total cash,total items sold.
 class DailyBalance(models.Model):
-    date = modesls.DateField(unique=True)
+    date = models.DateField(unique=True)
     total_cash = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-    credit_given = models.DecimalField(max_digits=16, decimal_places=2, default=0)  # NEW
-    repayments_received = models.DecimalField(max_digits=16, decimal_places=2, default=0)  # NEW
+    credit_given = models.DecimalField(max_digits=16, decimal_places=2, default=0) 
+    repayments_received = models.DecimalField(max_digits=16, decimal_places=2, default=0) 
     total_items_sold = models.PositiveIntegerField(default=0)
     transaction_count = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
