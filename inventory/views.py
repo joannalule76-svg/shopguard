@@ -4,9 +4,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 
-from .forms import AddToBasketForm, ConfirmSaleForm
-from .models import InventoryItem
-from .services import SaleError, confirm_sale
+from .forms import AddToBasketForm, ConfirmSaleForm, PaymentForm
+from .models import Customer, InventoryItem
+from .services import SaleError, confirm_sale, credit_status, record_payment
 
 
 @login_required
@@ -107,4 +107,47 @@ def sales_entry(request):
         "confirm_form": confirm_form,
         "lines": lines,
         "total": total,
+    })
+
+
+@login_required
+def receive_payment(request):
+    # The balances page links here with ?customer=<id> to pre-select who is paying
+    form = PaymentForm(initial={"customer": request.GET.get("customer")})
+    if request.method == "POST":
+        form = PaymentForm(request.POST)
+        if form.is_valid():
+            customer = form.cleaned_data["customer"]
+            try:
+                payment = record_payment(request.user, customer, form.cleaned_data["amount"])
+            except SaleError as error:
+                messages.error(request, str(error))
+            else:
+                owed, _ = credit_status(customer)
+                messages.success(
+                    request,
+                    f"Payment of {payment.amount} received from {customer.name}. Still owes: {owed}",
+                )
+                return redirect("customer_balances")
+    return render(request, "inventory/receive_payment.html", {"form": form})
+
+
+@login_required
+def customer_balances(request):
+    rows = []
+    for customer in Customer.objects.filter(is_active=True).order_by("name"):
+        owed, overdue = credit_status(customer)
+        if owed > 0 or customer.credit_limit > 0:
+            rows.append({
+                "customer": customer,
+                "owed": owed,
+                "overdue": overdue,
+                "available": max(customer.credit_limit - owed, 0),
+            })
+    # Overdue first, then the biggest debts
+    rows.sort(key=lambda r: (r["overdue"], r["owed"]), reverse=True)
+    return render(request, "inventory/customer_balances.html", {
+        "rows": rows,
+        "total_owed": sum((r["owed"] for r in rows), Decimal("0.00")),
+        "total_overdue": sum((r["overdue"] for r in rows), Decimal("0.00")),
     })

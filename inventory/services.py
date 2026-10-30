@@ -19,6 +19,58 @@ def customer_balance(customer):
     return credit - paid
 
 
+def credit_status(customer):
+    """Returns (balance, overdue) for a customer.
+
+    balance: what they owe in total.
+    overdue: the part of that balance that belongs to credit sales already past
+    their due date. Payments are counted against the oldest credit sales first.
+    """
+    today = timezone.localdate()
+    paid = Payment.objects.filter(customer=customer).aggregate(t=Sum("amount"))["t"] or Decimal("0.00")
+    balance = Decimal("0.00")
+    overdue = Decimal("0.00")
+    credit_sales = Sale.objects.filter(customer=customer, amount_on_credit__gt=0).order_by("timestamp", "pk")
+    for sale in credit_sales:
+        covered = min(paid, sale.amount_on_credit)
+        paid -= covered
+        outstanding = sale.amount_on_credit - covered
+        balance += outstanding
+        if outstanding > 0 and sale.due_date and sale.due_date < today:
+            overdue += outstanding
+    return balance, overdue
+
+
+@transaction.atomic
+def record_payment(user, customer, amount):
+    """Records money received from a customer to pay down what they owe."""
+    if customer is None:
+        raise SaleError("Choose the customer who is paying. Nothing was saved.")
+    if amount is None or amount <= 0:
+        raise SaleError("The payment must be more than zero. Nothing was saved.")
+
+    # Read the customer fresh from the database
+    customer = Customer.objects.filter(pk=customer.pk).first()
+    if customer is None:
+        raise SaleError("That customer no longer exists. Nothing was saved.")
+
+    owed = customer_balance(customer)
+    if owed <= 0:
+        raise SaleError(f"{customer.name} does not owe anything. Nothing was saved.")
+    if amount > owed:
+        raise SaleError(f"{customer.name} owes {owed}. A payment cannot be more than that. Nothing was saved.")
+
+    payment = Payment.objects.create(customer=customer, amount=amount, received_by=user)
+
+    # Repayments are counted on their own line of today's cash book
+    balance, _ = DailyBalance.objects.get_or_create(date=timezone.localdate())
+    DailyBalance.objects.filter(pk=balance.pk).update(
+        repayments_received=F("repayments_received") + amount,
+        updated_at=timezone.now(),
+    )
+    return payment
+
+
 @transaction.atomic
 def confirm_sale(user, basket, customer=None, amount_paid=None, customer_name=""):
     if not basket:

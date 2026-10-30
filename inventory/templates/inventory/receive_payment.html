@@ -1,0 +1,40 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Receive Payment{% endblock %}
+
+{% block content %}
+<style>
+  .card { background: white; padding: 20px; border-radius: 8px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.12); margin-bottom: 20px; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+  .row label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+  .row input, .row select { padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 15px; }
+  .btn { background: #2563eb; color: white; border: none; padding: 9px 18px;
+         border-radius: 4px; font-size: 15px; cursor: pointer; }
+  ul.errorlist { margin: 4px 0 0 0; padding: 0; list-style: none; color: #b91c1c; font-size: 13px; }
+</style>
+
+<h2>Receive a payment</h2>
+
+<div class="card">
+  <form method="post" onsubmit="this.querySelector('button').disabled = true;">
+    {% csrf_token %}
+    {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+    <div class="row">
+      <div>
+        <label for="id_customer">Customer</label>
+        {{ form.customer }}
+        {{ form.customer.errors }}
+      </div>
+      <div>
+        <label for="id_amount">Amount received</label>
+        {{ form.amount }}
+        {{ form.amount.errors }}
+      </div>
+      <div style="padding-top: 22px;">
+        <button type="submit" class="btn">Record payment</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

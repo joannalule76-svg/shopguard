@@ -1,0 +1,55 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Customer Balances{% endblock %}
+
+{% block content %}
+<style>
+  .card { background: white; padding: 20px; border-radius: 8px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.12); margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e5e7eb; }
+  td.num, th.num { text-align: right; }
+  .overdue { color: #b91c1c; font-weight: bold; }
+  .summary { display: flex; gap: 32px; margin-bottom: 16px; }
+  .summary div span { display: block; font-size: 13px; color: #6b7280; }
+  .summary div strong { font-size: 22px; }
+  .btn-small { background: #2563eb; color: white; text-decoration: none;
+               padding: 4px 10px; border-radius: 4px; font-size: 13px; }
+</style>
+
+<h2>Customer balances</h2>
+
+<div class="card">
+  <div class="summary">
+    <div><span>Total owed</span><strong>{{ total_owed }}</strong></div>
+    <div><span>Overdue</span><strong class="{% if total_overdue %}overdue{% endif %}">{{ total_overdue }}</strong></div>
+  </div>
+
+  <table>
+    <tr>
+      <th>Customer</th>
+      <th>Phone</th>
+      <th class="num">Owes</th>
+      <th class="num">Overdue</th>
+      <th class="num">Credit left</th>
+      <th></th>
+    </tr>
+    {% for row in rows %}
+      <tr>
+        <td>{{ row.customer.name }}</td>
+        <td>{{ row.customer.phone|default:"-" }}</td>
+        <td class="num">{{ row.owed }}</td>
+        <td class="num {% if row.overdue %}overdue{% endif %}">{{ row.overdue }}</td>
+        <td class="num">{{ row.available }}</td>
+        <td>
+          {% if row.owed > 0 %}
+            <a class="btn-small" href="{% url 'receive_payment' %}?customer={{ row.customer.pk }}">Receive payment</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">No customers with credit yet. The owner adds customers in the admin panel.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

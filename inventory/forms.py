@@ -72,3 +72,18 @@ class ConfirmSaleForm(forms.Form):
         required=False,
         label="Amount paid now (blank = pay in full)",
     )
+
+
+class PaymentForm(forms.Form):
+    """Money received from a customer who owes the shop."""
+    customer = forms.ModelChoiceField(
+        queryset=Customer.objects.filter(is_active=True).order_by("name"),
+        empty_label="Choose a customer",
+        label="Customer",
+    )
+    amount = forms.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        min_value=Decimal("0.01"),
+        label="Amount received",
+    )
