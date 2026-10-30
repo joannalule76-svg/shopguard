@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 
-from .forms import AddToBasketForm
+from .forms import AddToBasketForm, ConfirmSaleForm
 from .models import InventoryItem
 from .services import SaleError, confirm_sale
 
@@ -42,6 +42,7 @@ def build_lines(basket):
 def sales_entry(request):
     basket = request.session.get("basket", [])
     form = AddToBasketForm()
+    confirm_form = ConfirmSaleForm()
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -80,18 +81,30 @@ def sales_entry(request):
             return redirect("sales_entry")
 
         elif action == "confirm":
-            try:
-                sale = confirm_sale(request.user, basket)
-            except SaleError as error:
-                messages.error(request, str(error))  # the draft stays, nothing was saved
-            else:
-                request.session["basket"] = []
-                messages.success(request, f"Sale #{sale.pk} recorded. Total: {sale.total_amount}")
-            return redirect("sales_entry")
+            confirm_form = ConfirmSaleForm(request.POST)
+            if confirm_form.is_valid():
+                try:
+                    sale = confirm_sale(
+                        request.user,
+                        basket,
+                        customer=confirm_form.cleaned_data["customer"],
+                        amount_paid=confirm_form.cleaned_data["amount_paid"],
+                        customer_name=confirm_form.cleaned_data.get("customer_name") or "",
+                    )
+                except SaleError as error:
+                    messages.error(request, str(error))
+                else:
+                    request.session["basket"] = []
+                    messages.success(
+                        request,
+                        f"Sale #{sale.pk} recorded. Total: {sale.total_amount}",
+                    )
+                    return redirect("sales_entry")
 
     lines, total = build_lines(basket)
     return render(request, "inventory/sales_entry.html", {
         "form": form,
+        "confirm_form": confirm_form,
         "lines": lines,
         "total": total,
     })

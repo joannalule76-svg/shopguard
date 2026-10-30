@@ -90,19 +90,45 @@
 
   <div class="total">Total: {{ total }}</div>
 
-   {% if lines %}
-    <div style="display: flex; gap: 12px; margin-top: 12px;">
-      <form method="post" onsubmit="this.querySelector('button').disabled = true;">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="confirm">
-        <button type="submit" class="btn" style="background: #16a34a;">Confirm Sale</button>
-      </form>
-      <form method="post">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="clear">
-        <button type="submit" class="btn btn-grey">Clear all</button>
-      </form>
-    </div>
-  {% endif %}
+{% if lines %}
+  <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+    <form method="post" onsubmit="this.querySelector('[type=submit]').disabled = true;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="confirm">
+
+      {% if confirm_form.non_field_errors %}
+        <div class="error">{{ confirm_form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="row">
+        <div>
+          <label for="id_customer">{{ confirm_form.customer.label }}</label>
+          {{ confirm_form.customer }}
+          {{ confirm_form.customer.errors }}
+        </div>
+        <div>
+          <label for="id_customer_name">{{ confirm_form.customer_name.label }}</label>
+          {{ confirm_form.customer_name }}
+          {{ confirm_form.customer_name.errors }}
+        </div>
+        <div>
+          <label for="id_amount_paid">{{ confirm_form.amount_paid.label }}</label>
+          {{ confirm_form.amount_paid }}
+          {{ confirm_form.amount_paid.errors }}
+        </div>
+      </div>
+
+      <button type="submit" class="btn" style="background: #16a34a; margin-top: 12px;">
+        Confirm Sale
+      </button>
+    </form>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="clear">
+      <button type="submit" class="btn btn-grey">Clear all</button>
+    </form>
+  </div>
+{% endif %}
 </div>
 {% endblock %}

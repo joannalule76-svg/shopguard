@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django import forms
 
-from .models import InventoryItem
+from .models import Customer, InventoryItem
 
 
 class AddToBasketForm(forms.Form):
@@ -51,3 +51,24 @@ class AddToBasketForm(forms.Form):
         cleaned["item"] = item
         cleaned["price"] = price
         return cleaned
+
+
+class ConfirmSaleForm(forms.Form):
+    customer = forms.ModelChoiceField(
+        queryset=Customer.objects.filter(is_active=True).order_by("name"),
+        required=False,
+        empty_label="Walk-in / cash customer",
+        label="Customer",
+    )
+    customer_name = forms.CharField(
+        max_length=100,
+        required=False,
+        label="Walk-in name (optional)",
+    )
+    amount_paid = forms.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        min_value=Decimal("0.00"),
+        required=False,
+        label="Amount paid now (blank = pay in full)",
+    )
